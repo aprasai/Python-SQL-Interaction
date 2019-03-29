@@ -1,0 +1,80 @@
+
+import pandas as pd
+import pyodbc
+import dotdict
+
+sqlInfo   = 'DRIVER={SQL Server};SERVER=NAME;DATABASE=DBNAME;UID=USER;PWD=PSSWD'
+
+#functions to get data from the sql table
+
+def load_data_from_sql(query):
+    conn = pyodbc.connect(sqlInfo)
+    cursor = conn.cursor()
+    
+    print ('Your data is being loaded. Please wait...')
+    
+    raw = cursor.execute(query)
+    namesRaw = [ a[0] for a in cursor.description]
+    dataRaw = [dotdict.dotdict(dict(zip(namesRaw, res))) for res in raw.fetchall()]
+    dataRaw = pd.DataFrame.from_records(dataRaw)
+    
+    print ('loading complete.')
+    cursor.close()
+    conn.close()
+    
+    return (dataRaw)
+
+ def get_data_from_sql(value):
+    cnxn = pyodbc.connect(sqlInfo )
+    data = pd.read_sql("SELECT * FROM TABLENAME WHERE [COLUMN] ='"+value+"'",cnxn)
+    cnxn.close()
+    return (data)
+
+#Function to delete a sql table
+def delete_sql(value):
+    cnxn = pyodbc.connect(sqlInfo )
+    crsr = cnxn.cursor()
+    crsr.execute("DELETE FROM TABLENAME WHERE [COLUMN] ='"+value+"'")
+    cnxn.commit()
+    crsr.close()
+    cnxn.close()
+    return
+    
+#Function to insert product information into the SQL database
+def insert_to_sql(data):
+    cnxn = pyodbc.connect(sqlInfo)
+    crsr = cnxn.cursor()
+
+    for index,row in data.iterrows():
+        try: 
+            crsr.execute(' INSERT INTO TABLENAME ([Column1],[Column2],\
+                           [Column3],[Column4],[Column5],[Column6],[Column7]) VALUES (?,?,?,?,?,?,?)',
+                            row['COLUMN1'],
+                            row['COLUMN2'],
+                            row['COLUMN3'],
+                            row['COLUMN4'],
+                            row['COLUMN5'],
+                            row['COLUMN6'],
+                            row['COLUMN7'])
+        except Exception as ex:
+            print (ex)
+            print (     row['COLUMN1'],
+                        row['COLUMN2'],
+                        row['COLUMN3'],
+                        row['COLUMN4'],
+                        row['COLUMN5'],
+                        row['COLUMN6'],
+                        row['COLUMN7'])
+
+        cnxn.commit()
+    crsr.close()
+    cnxn.close()
+    return
+
+
+load_data_from_sql('SELECT * FROM TABLENAME')
+get_data_from_sql('condition')
+delete_sql('condition')
+insert_to_sql(dataFrame)
+
+
